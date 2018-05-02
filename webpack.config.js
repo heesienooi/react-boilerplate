@@ -1,46 +1,42 @@
-var webpack = require('webpack');
-var ip = require('ip');
-var path = require('path');
-
-var defineOptions = {
-  // Static assets serve from this address.
-  'PUBLIC_PATH': process.env.PUBLIC_PATH || '/assets/',
-
-  // Debugging variable to be used in if block. Statements in this block will be
-  // removed when running `npm run build`
-  '__DEV__': JSON.stringify(JSON.parse(process.env.BUILD_DEV || 'true')),
-
-  // This is mainly used by node modules to remove their dead codes when
-  // compress and compiling codes
-  'process.env': {
-    NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development')
-  }
-};
+const HtmlWebPackPlugin = require('html-webpack-plugin');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
-  cache: true,
-  entry: './src/main.js',
+  entry: [
+    './src/index.js'
+  ],
   output: {
-    path: './dist/assets/__build__/',
-    filename: 'bundle.js',
-    publicPath: defineOptions.PUBLIC_PATH + '__build__/'
-  },
-  resolve: {
-    root: path.resolve(__dirname, 'src')
+    path: __dirname + '/dist',
+    publicPath: '/',
+    filename: '[name].[chunkhash].js',
   },
   module: {
-    loaders: [
-      { test: /\.(gif|svg|woff|ttf|eot|otf)$/, loader: "file" },
-      { test: /\.(png|jpe?g)$/, loader: 'url?limit=8192' }, // inline base64 URLs for <=8k images, direct URLs for the rest
-      { test: /\.js$/, loaders: ['react-hot', 'babel'], exclude: /node_modules/ },
-      { test: /\.scss$/, loader: 'style!css!autoprefixer?{browsers:["ie >= 9", "last 2 version"]}!sass?outputStyle=expanded&sourceMap=true&sourceMapContents=true' },
-      { test: /\.css$/, loader: 'style!css!autoprefixer?{browsers:["ie >= 9", "last 2 version"]}' }
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: ['babel-loader']
+      }
     ]
   },
-  devServer: {
-    contentBase: './dist/',
-    host: process.env.HOST || ip.address(),
-    port: process.env.PORT || 8080
+  resolve: {
+    // Automatically resolve without file extension when importing.
+    // E.g. import File from '../path/to/file'
+    extensions: ['.js', '.jsx', '.json']
   },
-  plugins: [new webpack.DefinePlugin(defineOptions)]
+  devServer: {
+    contentBase: './dist',
+  },
+  plugins: [
+    // Remove clutters from dist.
+    new CleanWebpackPlugin(['dist']),
+
+    // Generate index.html file which serve webpack bundles. This is especially
+    // useful for webpack bundles that include a hash in filename which changes
+    // every compilation.
+    new HtmlWebPackPlugin({
+      template: './src/index.html',
+      filename: './index.html'
+    }),
+  ]
 };
